@@ -1,0 +1,7 @@
+#Ignore all
+*
+
+#Except those in build and examples directory
+!build/*
+!examples/*
+!.gitignore
