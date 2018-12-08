@@ -2,6 +2,6 @@
 *
 
 #Except those in build and examples directory
-!build/*
-!examples/*
+!pistache/build/*
+!pistache/examples/*
 !.gitignore
