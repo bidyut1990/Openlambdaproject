@@ -1,0 +1,1 @@
+/usr/bin/c++    -Wall -pedantic -Wextra -Wno-missing-field-initializers -lcurl -std=c++17 -O3 -DNDEBUG   CMakeFiles/run_rest_server.dir/rest_server.cc.o  -o run_rest_server -rdynamic -lcurl ../src/libpistache.a -lpthread 

@@ -1,0 +1,1 @@
+/usr/bin/c++    -Wall -pedantic -Wextra -Wno-missing-field-initializers -lcurl -std=c++17 -O3 -DNDEBUG   CMakeFiles/run_custom_header.dir/custom_header.cc.o  -o run_custom_header -rdynamic -lcurl ../src/libpistache.a -lpthread 
