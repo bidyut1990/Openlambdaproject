@@ -21,13 +21,13 @@ void dump(const char *text,
   size_t i;
   size_t c;
   unsigned int width=0x10;
- 
+
   fprintf(stream, "%s, %10.10ld bytes (0x%8.8lx)\n",
           text, (long)size, (long)size);
- 
+
   for(i=0; i<size; i+= width) {
     fprintf(stream, "%4.4lx: ", (long)i);
- 
+
     /* show hex to the left */
     for(c = 0; c < width; c++) {
       if(i+c < size)
@@ -35,17 +35,17 @@ void dump(const char *text,
       else
         fputs("   ", stream);
     }
- 
+
     /* show data on the right */
     for(c = 0; (c < width) && (i+c < size); c++) {
       char x = (ptr[i+c] >= 0x20 && ptr[i+c] < 0x80) ? ptr[i+c] : '.';
       fputc(x, stream);
     }
- 
+
     fputc('\n', stream); /* newline */
   }
 }
- 
+
 static
 int my_trace(CURL *handle, curl_infotype type,
              char *data, size_t size,
@@ -54,13 +54,13 @@ int my_trace(CURL *handle, curl_infotype type,
   const char *text;
   (void)handle; /* prevent compiler warning */
   (void)userp;
- 
+
   switch (type) {
   case CURLINFO_TEXT:
     fprintf(stderr, "== Info: %s", data);
   default: /* in case a new one is introduced to shock us */
     return 0;
- 
+
   case CURLINFO_HEADER_OUT:
     text = "=> Send header";
     break;
@@ -80,11 +80,11 @@ int my_trace(CURL *handle, curl_infotype type,
     text = "<= Recv SSL data";
     break;
   }
- 
+
   dump(text, stderr, (unsigned char *)data, size);
   return 0;
 }
-  
+
 struct PrintException {
     void operator()(std::exception_ptr exc) const {
         try {
@@ -168,7 +168,7 @@ class MyHandler : public Http::Handler {
             Http::ResponseWriter response) override {
 	std::string res_name = req.resource();
 	std::cout << "Orignal request" << res_name << std::endl;
-	std::cout << res_name.find("/runLambda") << std::endl;	
+	std::cout << res_name.find("/runLambda") << std::endl;
 	if (res_name.find("/runLambda") == 0) {
        		if (req.method() == Http::Method::Post) {
 			CURL *curl;
@@ -219,21 +219,21 @@ class MyHandler : public Http::Handler {
 			string readBuffer;
 			if(curl) {
 				curl_easy_setopt(curl, CURLOPT_URL, "http://google.com");
-				/* example.com is redirected, so we tell libcurl to follow redirection */ 
+				/* example.com is redirected, so we tell libcurl to follow redirection */
 				//curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 				curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
 				curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
-			
+
 				curl_easy_setopt(curl, CURLOPT_DEBUGFUNCTION, my_trace);
-				curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);	
-				/* Perform the request, res will get the return code */ 
+				curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+				/* Perform the request, res will get the return code */
 				res = curl_easy_perform(curl);
-				/* Check for errors */ 
+				/* Check for errors */
 				if(res != CURLE_OK)
 					fprintf(stderr, "curl_easy_perform() failed: %s\n",
 							curl_easy_strerror(res));
 
-				/* always cleanup */ 
+				/* always cleanup */
 				curl_easy_cleanup(curl);
 			}
 			response.send(Http::Code::Ok, readBuffer, MIME(Text, Plain));
@@ -267,6 +267,36 @@ class MyHandler : public Http::Handler {
 
             }
         }
+        else if (req.resource() == "/statistics") {
+            if (req.method() == Http::Method::Post) {
+
+                using namespace Http;
+
+                auto query = req.query();
+                if (query.has("chunked")) {
+                    std::cout << "Using chunked encoding" << std::endl;
+
+                    response.headers()
+                        .add<Header::Server>("pistache/0.1")
+                        .add<Header::ContentType>(MIME(Text, Plain));
+
+                    response.cookies()
+                        .add(Cookie("lang", "en-US"));
+
+                    auto stream = response.stream(Http::Code::Ok);
+                    stream << "re";
+                    stream << "ce";
+                    stream << "iv";
+                    stream << "ed";
+                    stream << ends;
+                }
+                else {
+                    std::cout << req.body() << std::endl;
+                    response.send(Http::Code::Ok, "Received");
+                }
+
+            }
+        }
         else if (req.resource() == "/register") {
             if (req.method() == Http::Method::Get) {
 
@@ -285,11 +315,11 @@ class MyHandler : public Http::Handler {
 
                     auto stream = response.stream(Http::Code::Ok);
                     //Form chunked uuid and output to stream
-			
+
 		    stream << ends;
                 }
                 else {
-		    
+
                 }
 
             }
@@ -341,7 +371,7 @@ else if (req.resource() == "/echo") {
 };
 
 int main(int argc, char *argv[]) {
-    Port port(9080);
+    Port port(9081);
 
     int thr = 10;
 
