@@ -4,4 +4,5 @@
 #Except those in build and examples directory
 !pistache/build/*
 !pistache/examples/*
+!clientDaemon/*
 !.gitignore
