@@ -14,6 +14,174 @@
 using namespace std;
 using namespace Pistache;
 
+int getFilenameAndIp(string sp, string  &filename, string &ip, string &cd)
+{
+
+        string delimiter = " ";
+        size_t pos = 0;
+        string token;
+        int start = 0;
+        while ((pos= sp.find(delimiter)) != std::string::npos) {
+                start++;
+                token = sp.substr(0,pos);
+                cout << "G: " << token << endl;
+                sp.erase(0, pos + delimiter.length());
+		if (start == 2) {
+                        if (token.find("CREAT") != std::string::npos) {
+                                cd = "create";
+                        } else if (token.find("DELET") != std::string::npos) {
+                                cd = "delete";
+                        }
+                }
+
+                if (start == 3)
+                        filename = token;
+        }
+        ip = sp;
+	return 0;
+}
+
+
+#define CHAR_SIZE 128
+
+// A Class representing a Trie node
+class Trie
+{
+public:
+	bool isLeaf;
+	Trie* character[CHAR_SIZE];
+
+	// Constructor
+	Trie()
+	{
+		this->isLeaf = false;
+
+		for (int i = 0; i < CHAR_SIZE; i++)
+			this->character[i] = nullptr;
+	}
+
+	void insert(std::string);
+	bool deletion(Trie*&, std::string);
+	bool search(std::string);
+	bool haveChildren(Trie const*);
+};
+
+Trie *ip_1;
+Trie *ip_2;
+Trie *ip_3;
+
+// Iterative function to insert a key in the Trie
+void Trie::insert(std::string key)
+{
+	// start from root node
+	Trie* curr = this;
+	for (int i = 0; i < key.length(); i++)
+	{
+		// create a new node if path doesn't exists
+		if (curr->character[key[i]] == nullptr)
+			curr->character[key[i]] = new Trie();
+
+		// go to next node
+		curr = curr->character[key[i]];
+	}
+
+	// mark current node as leaf
+	curr->isLeaf = true;
+}
+
+// Iterative function to search a key in Trie. It returns true
+// if the key is found in the Trie, else it returns false
+bool Trie::search(std::string key)
+{
+	// return false if Trie is empty
+	if (this == nullptr)
+		return false;
+
+	Trie* curr = this;
+	for (int i = 0; i < key.length(); i++)
+	{
+		// go to next node
+		curr = curr->character[key[i]];
+
+		// if string is invalid (reached end of path in Trie)
+		if (curr == nullptr)
+			return false;
+	}
+
+	// if current node is a leaf and we have reached the
+	// end of the string, return true
+	return curr->isLeaf;
+}
+
+// returns true if given node has any children
+bool Trie::haveChildren(Trie const* curr)
+{
+	for (int i = 0; i < CHAR_SIZE; i++)
+		if (curr->character[i])
+			return true;	// child found
+
+	return false;
+}
+
+// Recursive function to delete a key in the Trie
+bool Trie::deletion(Trie*& curr, std::string key)
+{
+	// return if Trie is empty
+	if (curr == nullptr)
+		return false;
+
+	// if we have not reached the end of the key
+	if (key.length())
+	{
+		// recurse for the node corresponding to next character in the key
+		// and if it returns true, delete current node (if it is non-leaf)
+
+		if (curr != nullptr &&
+			curr->character[key[0]] != nullptr &&
+			deletion(curr->character[key[0]], key.substr(1)) &&
+			curr->isLeaf == false)
+		{
+			if (!haveChildren(curr))
+			{
+				delete curr;
+				curr = nullptr;
+				return true;
+			}
+			else {
+				return false;
+			}
+		}
+	}
+
+	// if we have reached the end of the key
+	if (key.length() == 0 && curr->isLeaf)
+	{
+		// if current node is a leaf node and don't have any children
+		if (!haveChildren(curr))
+		{
+			// delete current node
+			delete curr;
+			curr = nullptr;
+
+			// delete non-leaf parent nodes
+			return true;
+		}
+
+		// if current node is a leaf node and have children
+		else
+		{
+			// mark current node as non-leaf node (DON'T DELETE IT)
+			curr->isLeaf = false;
+
+			// don't delete its parent nodes
+			return false;
+		}
+	}
+
+	return false;
+}
+
+
 static
 void dump(const char *text,
           FILE *stream, unsigned char *ptr, size_t size)
@@ -323,8 +491,48 @@ class MyHandler : public Http::Handler {
                 }
 
             }
-        }
-else if (req.resource() == "/echo") {
+        } else if (req.resource() == "/listoflambda") {
+            if (req.method() == Http::Method::Post) {
+		cout << "Recv: " << req.body() << endl;;
+		string modifyLine = req.body();
+		string filename;
+		string ip;
+		string create_or_delete;
+		getFilenameAndIp (modifyLine, filename, ip, create_or_delete);
+		cout << "Os: "  << filename << " : " << ip << " : " << create_or_delete << endl;
+		if (ip == "10.0.2.15" && create_or_delete == "create")  {
+			(ip_1)->insert (filename);
+		} 
+		if (ip == "10.0.2.15" && create_or_delete == "delete") {
+			if (ip_1 != NULL)
+				(ip_1)->deletion (ip_1, filename);
+		}
+ 
+		if (ip == "" && create_or_delete == "create")  {
+                        (ip_2)->insert (filename);
+                }
+                
+		if (ip == "" && create_or_delete == "delete") {
+                        if (ip_2 != NULL)
+                                (ip_2)->deletion (ip_2, filename);
+                }
+
+		if (ip == "" && create_or_delete == "create")  {
+                        (ip_3)->insert (filename);
+                }
+                
+		if (ip == "" && create_or_delete == "delete") {
+                        if (ip_3 != NULL)
+                                (ip_3)->deletion (ip_3, filename);
+                }
+
+		cout << "finding" << ip_1->search (filename) << std::endl;
+
+               response.send(Http::Code::Ok, req.body(), MIME(Text, Plain));
+            } else {
+                response.send(Http::Code::Method_Not_Allowed);
+            }
+        } else if (req.resource() == "/echo") {
             if (req.method() == Http::Method::Post) {
                 response.send(Http::Code::Ok, req.body(), MIME(Text, Plain));
             } else {
@@ -381,6 +589,10 @@ int main(int argc, char *argv[]) {
         if (argc == 3)
             thr = std::stol(argv[2]);
     }
+
+    ip_1 = new Trie();
+    ip_2 = new Trie();
+    ip_3 = new Trie();
 
     Address addr(Ipv4::any(), port);
 
